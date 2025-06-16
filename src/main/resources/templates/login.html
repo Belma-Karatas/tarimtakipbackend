@@ -1,0 +1,109 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+    <title>Tarım Takip Sistemi - Giriş</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <style>
+        body {
+            background-image: url('/images/login-background.png'); /* Görsel uzantısı düzeltildi */
+            background-size: cover;
+            background-position: center center;
+            background-repeat: no-repeat;
+            background-attachment: fixed;
+
+            display: flex;
+            flex-direction: column; /* Header ve login-container'ı dikeyde sıralamak için */
+            align-items: center;
+            justify-content: center; /* Ana içeriği dikeyde ortalamak için */
+            height: 100vh;
+            margin: 0;
+            padding-top: 70px; /* Header'ın yüksekliği kadar padding, login-container'ın header altına gelmemesi için */
+            box-sizing: border-box; /* Padding'in yüksekliğe dahil olması için */
+        }
+
+        header {
+            position: fixed; /* Header'ı sayfanın üstüne sabitle */
+            top: 0;
+            left: 0; /* Header'ın sola yaslanması için */
+            width: 100%;
+            padding: 15px;
+            background-color: rgba(40, 167, 69, 0.9); /* Daha koyu yeşil, şeffaf */
+            text-align: center;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+            font-size: 1.5rem;
+            font-weight: bold;
+            color: #ffffff; /* Beyaz yazı rengi */
+            z-index: 1000; /* Diğer elemanların üzerinde kalması için */
+        }
+
+        .login-container {
+            background-color: rgba(255, 255, 255, 0.92); /* Şeffaflığı biraz daha artırdım */
+            padding: 30px;
+            border-radius: 8px;
+            box-shadow: 0 0 25px rgba(0,0,0,0.25); /* Gölgeyi biraz daha belirginleştirdim */
+            width: 100%;
+            max-width: 400px;
+            /* margin-top: 80px; Kaldırıldı, body padding-top ile ayarlandı */
+            text-align: center; /* İçeriği ortalamak için */
+        }
+
+        .login-container h2 {
+            margin-bottom: 25px; /* Boşluğu artırdım */
+            text-align: center;
+            color: #333;
+        }
+
+        .form-label {
+            color: #495057;
+            text-align: left; /* Label'ları sola yasla */
+            display: block; /* Tam genişlik kaplaması için */
+        }
+        .form-control {
+            margin-bottom: 15px; /* Inputlar arasına boşluk */
+        }
+        .btn-success {
+            background-color: #198754; /* Bootstrap success rengi */
+            border-color: #198754;
+        }
+    </style>
+</head>
+<body>
+
+    <!-- Üstte sabit başlık -->
+    <header>Tarım Takip Sistemi</header>
+
+    <div class="login-container">
+        <h2>Sisteme Giriş</h2>
+
+        <div th:if="${param.error}" class="alert alert-danger" role="alert">
+            Geçersiz kullanıcı adı veya şifre.
+        </div>
+        <div th:if="${param.logout}" class="alert alert-success" role="alert">
+            Başarıyla çıkış yaptınız.
+        </div>
+
+        <form th:action="@{/login}" method="post">
+            <div class="mb-3">
+                <label for="username" class="form-label">Kullanıcı Adı:</label>
+                <input type="text" id="username" name="username" class="form-control" required autofocus>
+            </div>
+            <div class="mb-3">
+                <label for="password" class="form-label">Şifre:</label>
+                <input type="password" id="password" name="password" class="form-control" required>
+            </div>
+            <div class.login-container d-grid>
+                <button type="submit" class="btn btn-success btn-lg">Giriş Yap</button> <!-- btn-lg eklendi -->
+            </div>
+        </form>
+
+        <!-- KAYIT LİNKİ EKLENDİ -->
+        <div class="mt-4 text-center"> <!-- mt-3 yerine mt-4 ile biraz daha boşluk -->
+            <p style="color: #555;">Hesabınız yok mu? <a th:href="@{/register}" style="color: #007bff; text-decoration: none; font-weight: bold;">Kayıt Ol</a></p>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>

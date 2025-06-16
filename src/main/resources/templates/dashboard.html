@@ -1,0 +1,36 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org"
+      xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
+      xmlns:sec="http://www.thymeleaf.org/extras/spring-security"
+      layout:decorate="~{layout/main-layout}"> <!-- BU SATIR ÇOK ÖNEMLİ -->
+<head>
+    <title>Kontrol Paneli</title> <!-- Bu başlık $CONTENT_TITLE olacak -->
+    <!--
+    <th:block layout:fragment="styles">
+        Eğer bu sayfaya özel CSS varsa buraya
+        <link rel="stylesheet" th:href="@{/css/dashboard-specific.css}" />
+    </th:block>
+    -->
+</head>
+<body>
+    <!-- Bu div'in içeriği main-layout.html'deki layout:fragment="content" kısmına yerleşecek -->
+    <div layout:fragment="content">
+        <div class="starter-template text-center py-3 px-2">
+            <h1>Kontrol Paneline Hoş Geldiniz!</h1>
+            <p class="lead">
+                Merhaba <strong sec:authentication="name">Kullanıcı</strong>!
+                Bu alanda sistemin genel durumu ve önemli bilgiler yer alacaktır.
+            </p>
+            <hr>
+            <!-- ... (Rol bazlı linkler aynı kalabilir) ... -->
+        </div>
+    </div>
+
+    <!--
+    <th:block layout:fragment="scripts">
+        Eğer bu sayfaya özel JS varsa buraya
+        <script th:src="@{/js/dashboard-specific.js}"></script>
+    </th:block>
+    -->
+</body>
+</html>
