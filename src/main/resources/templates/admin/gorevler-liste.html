@@ -4,12 +4,12 @@
       xmlns:sec="http://www.thymeleaf.org/extras/spring-security"
       layout:decorate="~{layout/main-layout}">
 <head>
-    <title th:text="${pageTitle}">Admin - Görev Listesi</title>
+    <title th:text="${pageTitle}">Görev Listesi</title>
 </head>
 <body>
 <div layout:fragment="content">
     <div class="container-fluid">
-        <h2 class="my-4">Görev Yönetimi</h2>
+        <h2 class="my-4" th:text="${pageTitle}">Görev Yönetimi</h2>
 
         <!-- Başarı/Hata Mesajları -->
         <div th:if="${successMessage}" class="alert alert-success alert-dismissible fade show" role="alert">
@@ -21,10 +21,12 @@
             <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
         </div>
 
-        <!-- Yeni Görev Ekle Butonu -->
-        <a th:href="@{/admin/gorevler/ekle}" class="btn btn-primary mb-3">
-            <i class="fas fa-plus-circle"></i> Yeni Görev Ata/Ekle
-        </a>
+        <!-- Yeni Görev Ekle Butonu - Sadece Admin görebilir (isAdmin flag'i ile kontrol) -->
+        <th:block th:if="${isAdmin}">
+            <a th:href="@{/admin/gorevler/ekle}" class="btn btn-primary mb-3">
+                <i class="fas fa-plus-circle"></i> Yeni Görev Ata/Ekle
+            </a>
+        </th:block>
 
         <!-- Görev Tablosu -->
         <div class="table-responsive">
@@ -45,7 +47,7 @@
                 </thead>
                 <tbody>
                 <tr th:each="gorevDto : ${gorevler}">
-                    <td th:text="${gorevDto.gorevID}">1</td>
+                    <td th:text="${gorevDto.getGorevID()}">1</td>
                     <td th:text="${gorevDto.faaliyetTipi ?: '-'}">Sulama</td>
                     <td th:text="${#strings.abbreviate(gorevDto.gorevAciklamasi, 50) ?: '-'}">Açıklama...</td>
                     <td th:text="${gorevDto.iliskiliTarlaAdi ?: '-'}">Tarla A</td>
@@ -55,17 +57,21 @@
                     <td th:text="${gorevDto.gorevOnceligi ?: '-'}">3</td>
                     <td th:text="${gorevDto.planlananBaslangicTarihi != null ? #temporals.format(gorevDto.planlananBaslangicTarihi, 'dd.MM.yyyy HH:mm') : '-'}">16.06.2025 10:00</td>
                     <td>
-                        <a th:href="@{/admin/gorevler/duzenle/{id}(id=${gorevDto.gorevID})}"
-                           class="btn btn-sm btn-warning me-1" title="Düzenle">
+                        <!-- Düzenle butonu hem Admin hem Çalışan için görünür -->
+                        <a th:href="@{/admin/gorevler/duzenle/{id}(id=${gorevDto.getGorevID()})}"
+                           class="btn btn-sm btn-warning me-1" title="Düzenle/Durum Güncelle">
                             <i class="fas fa-edit"></i>
                         </a>
-                        <a th:href="@{/admin/gorevler/sil/{id}(id=${gorevDto.gorevID})}"
-                           class="btn btn-sm btn-danger"
-                           th:attr="data-gorevaciklama=${#strings.abbreviate(gorevDto.gorevAciklamasi, 30)}"
-                           onclick="return confirm('Bu görevi (' + this.getAttribute('data-gorevaciklama') + ') silmek istediğinizden emin misiniz?');"
-                           title="Sil">
-                            <i class="fas fa-trash-alt"></i>
-                        </a>
+                        <!-- Sil butonu Sadece Admin görebilir (isAdmin flag'i ile kontrol) -->
+                        <th:block th:if="${isAdmin}">
+                            <a th:href="@{/admin/gorevler/sil/{id}(id=${gorevDto.getGorevID()})}"
+                               class="btn btn-sm btn-danger"
+                               th:attr="data-gorevaciklama=${#strings.abbreviate(gorevDto.gorevAciklamasi, 30)}"
+                               onclick="return confirm('Bu görevi (\'' + (this.getAttribute('data-gorevaciklama') || 'Bilinmeyen Görev') + '\') silmek istediğinizden emin misiniz?');"
+                               title="Sil">
+                                <i class="fas fa-trash-alt"></i>
+                            </a>
+                        </th:block>
                     </td>
                 </tr>
                 <tr th:if="${gorevler == null || #lists.isEmpty(gorevler)}">

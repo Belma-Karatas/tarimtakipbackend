@@ -5,11 +5,11 @@ import lombok.Data;
 import lombok.NoArgsConstructor;
 import java.time.LocalDateTime;
 
-@Data
+@Data // BU ANOTASYON ÖNEMLİ!
 @NoArgsConstructor
 @AllArgsConstructor
 public class GorevDetayDto {
-    private Integer gorevID;
+    private Integer gorevID; // Bu alanın adı Thymeleaf'teki ile aynı olmalı (case-sensitive)
     private String faaliyetTipi;
     private String gorevAciklamasi;
     private Integer iliskiliEkimID;

@@ -1,14 +1,10 @@
 package com.example.tarimtakipbackend.config;
 
-import com.example.tarimtakipbackend.service.CustomUserDetailsService; // Bu import kalsın
-import org.springframework.beans.factory.annotation.Autowired; // Bu import kalsın
+import com.example.tarimtakipbackend.service.CustomUserDetailsService;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.security.config.annotation.method.configuration.EnableMethodSecurity;
-// AuthenticationManager ve DaoAuthenticationProvider importlarına artık burada ihtiyacımız olmayabilir.
-// import org.springframework.security.authentication.AuthenticationManager;
-// import org.springframework.security.authentication.dao.DaoAuthenticationProvider;
-// import org.springframework.security.config.annotation.authentication.configuration.AuthenticationConfiguration;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
@@ -18,11 +14,9 @@ import org.springframework.security.web.util.matcher.AntPathRequestMatcher;
 
 @Configuration
 @EnableWebSecurity
-@EnableMethodSecurity
+@EnableMethodSecurity // Metot seviyesi @PreAuthorize anotasyonlarını etkinleştirir
 public class SecurityConfig {
 
-    // CustomUserDetailsService'imiz hala bir bean olarak enjekte ediliyor.
-    // Spring Boot bunu bulup kullanmalı.
     @Autowired
     private CustomUserDetailsService customUserDetailsService;
 
@@ -31,34 +25,27 @@ public class SecurityConfig {
         return new BCryptPasswordEncoder();
     }
 
-    // DaoAuthenticationProvider bean'ini kaldırıyoruz.
-    /*
-    @Bean
-    public DaoAuthenticationProvider authenticationProvider() {
-        DaoAuthenticationProvider authProvider = new DaoAuthenticationProvider();
-        authProvider.setUserDetailsService(customUserDetailsService);
-        authProvider.setPasswordEncoder(passwordEncoder());
-        return authProvider;
-    }
-    */
-
-    // AuthenticationManager bean'ini de kaldırıyoruz.
-    /*
-    @Bean
-    public AuthenticationManager authenticationManager(AuthenticationConfiguration authenticationConfiguration) throws Exception {
-        return authenticationConfiguration.getAuthenticationManager();
-    }
-    */
-
     @Bean
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
         http
-            // .authenticationProvider(...) satırını kaldırıyoruz.
             .authorizeHttpRequests(authorize -> authorize
                 .requestMatchers("/login", "/register", "/css/**", "/js/**", "/images/**", "/favicon.ico").permitAll()
+                
+                // --- YENİ EKLENEN/DÜZENLENEN KISIM BAŞLANGICI ---
+                // Çalışanların da erişebileceği GÖREV ile ilgili spesifik admin yolları:
+                .requestMatchers("/admin/gorevler", "/admin/gorevler/duzenle/**", "/admin/gorevler/kaydet").hasAnyRole("ADMIN", "CALISAN")
+                
+                // Sadece Admin'in erişebileceği GÖREV ile ilgili spesifik admin yolları:
+                .requestMatchers("/admin/gorevler/ekle", "/admin/gorevler/sil/**").hasRole("ADMIN")
+                // --- YENİ EKLENEN/DÜZENLENEN KISIM SONU ---
+                
+                // Diğer tüm /admin/** yolları sadece Admin'e:
                 .requestMatchers("/admin/**").hasRole("ADMIN")
-                .requestMatchers("/calisan/**").hasAnyRole("CALISAN", "ADMIN")
-                .anyRequest().authenticated()
+                
+                // Eğer /calisan diye ayrı bir prefix'iniz varsa (şu an için yok gibi duruyor):
+                // .requestMatchers("/calisan/**").hasAnyRole("CALISAN", "ADMIN") 
+                
+                .anyRequest().authenticated() // Diğer tüm istekler kimlik doğrulama gerektirir
             )
             .formLogin(form -> form
                 .loginPage("/login")
@@ -74,8 +61,7 @@ public class SecurityConfig {
                 .deleteCookies("JSESSIONID")
                 .permitAll()
             )
-            // CSRF'yi test için kapatabiliriz.
-            .csrf(csrf -> csrf.disable()); // CSRF'yi test için kapatalım
+            .csrf(csrf -> csrf.disable()); // Test için CSRF kapalı
 
         return http.build();
     }

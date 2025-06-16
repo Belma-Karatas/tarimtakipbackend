@@ -1,0 +1,115 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org"
+      xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
+      layout:decorate="~{layout/main-layout}">
+<head>
+    <title th:text="${pageTitle}">Sensör Formu</title>
+</head>
+<body>
+<div layout:fragment="content">
+    <div class="container-fluid">
+
+        <h2 th:if="${sensorForm != null and sensorForm.sensorID == null}" class="my-4">Yeni Sensör Ekle</h2>
+        <h2 th:unless="${sensorForm != null and sensorForm.sensorID == null}" class="my-4">
+            Sensörü Düzenle (ID: <span th:text="${sensorForm.sensorID}"></span>)
+        </h2>
+
+        <form th:action="@{/admin/sensorler/kaydet}" th:object="${sensorForm}" method="post">
+            <input type="hidden" th:if="*{sensorID != null}" th:field="*{sensorID}" />
+
+            <!-- Hata Mesajları -->
+            <div th:if="${#fields.hasGlobalErrors()}" class="alert alert-danger alert-dismissible fade show" role="alert">
+                <p th:each="err : ${#fields.globalErrors()}" th:text="${err}">Global Hata</p>
+                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+            </div>
+            <div th:if="${#fields.hasErrors() and !#fields.hasGlobalErrors()}" class="alert alert-danger alert-dismissible fade show" role="alert">
+                 Formda hatalar var. Lütfen işaretli alanları kontrol edin.
+                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+            </div>
+            <div th:if="${errorMessage}" class="alert alert-danger alert-dismissible fade show" role="alert">
+                <span th:text="${errorMessage}"></span>
+                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+            </div>
+
+            <div class="row">
+                <div class="col-md-6">
+                    <div class="mb-3">
+                        <label for="sensorKodu" class="form-label">Sensör Kodu: <span class="text-danger">*</span></label>
+                        <input type="text" id="sensorKodu" th:field="*{sensorKodu}" class="form-control"
+                               th:classappend="${#fields.hasErrors('sensorKodu')} ? 'is-invalid' : ''" />
+                        <div th:if="${#fields.hasErrors('sensorKodu')}" th:errors="*{sensorKodu}" class="invalid-feedback"></div>
+                    </div>
+                </div>
+                <div class="col-md-6">
+                    <div class="mb-3">
+                        <label for="tarlaId" class="form-label">Tarla: <span class="text-danger">*</span></label>
+                        <select id="tarlaId" th:field="*{tarlaId}" class="form-select"
+                                th:classappend="${#fields.hasErrors('tarlaId')} ? 'is-invalid' : ''">
+                            <option value="">-- Tarla Seçiniz --</option>
+                            <option th:each="tarla : ${tarlalar}"
+                                    th:value="${tarla.tarlaID}"
+                                    th:text="${tarla.tarlaAdi}"></option>
+                        </select>
+                        <div th:if="${#fields.hasErrors('tarlaId')}" th:errors="*{tarlaId}" class="invalid-feedback"></div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="row">
+                <div class="col-md-6">
+                    <div class="mb-3">
+                        <label for="sensorTipiId" class="form-label">Sensör Tipi: <span class="text-danger">*</span></label>
+                        <select id="sensorTipiId" th:field="*{sensorTipiId}" class="form-select"
+                                th:classappend="${#fields.hasErrors('sensorTipiId')} ? 'is-invalid' : ''">
+                            <option value="">-- Sensör Tipi Seçiniz --</option>
+                            <option th:each="tip : ${sensorTipleri}"
+                                    th:value="${tip.sensorTipiID}"
+                                    th:text="${tip.tipAdi + (tip.olcumBirimi != null ? ' (' + tip.olcumBirimi + ')' : '')}"></option>
+                        </select>
+                        <div th:if="${#fields.hasErrors('sensorTipiId')}" th:errors="*{sensorTipiId}" class="invalid-feedback"></div>
+                    </div>
+                </div>
+                <div class="col-md-6">
+                    <div class="mb-3">
+                        <label for="markaModel" class="form-label">Marka/Model:</label>
+                        <input type="text" id="markaModel" th:field="*{markaModel}" class="form-control" />
+                    </div>
+                </div>
+            </div>
+
+            <div class="row">
+                <div class="col-md-6">
+                    <div class="mb-3">
+                        <label for="kurulumTarihi" class="form-label">Kurulum Tarihi:</label>
+                        <input type="date" id="kurulumTarihi" th:field="*{kurulumTarihi}" class="form-control" />
+                    </div>
+                </div>
+                <div class="col-md-6">
+                    <div class="mb-3">
+                        <label for="sonBakimTarihi" class="form-label">Son Bakım Tarihi:</label>
+                        <input type="date" id="sonBakimTarihi" th:field="*{sonBakimTarihi}" class="form-control" />
+                    </div>
+                </div>
+            </div>
+
+            <div class="mb-3">
+                <label for="konumAciklamasi" class="form-label">Konum Açıklaması:</label>
+                <textarea id="konumAciklamasi" th:field="*{konumAciklamasi}" class="form-control" rows="2"></textarea>
+            </div>
+
+            <div class="mb-3 form-check">
+                <input type="checkbox" id="aktifMi" th:field="*{aktifMi}" class="form-check-input" />
+                <label for="aktifMi" class="form-check-label">Sensör Aktif Mi?</label>
+            </div>
+
+            <button type="submit" class="btn btn-success">
+                <i class="fas fa-save"></i> Kaydet
+            </button>
+            <a th:href="@{/admin/sensorler}" class="btn btn-secondary ms-2">
+                <i class="fas fa-times-circle"></i> İptal
+            </a>
+        </form>
+    </div>
+</div>
+</body>
+</html>

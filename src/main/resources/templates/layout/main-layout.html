@@ -95,26 +95,22 @@
                     <i class="fas fa-seedling"></i> Ekim Planlama
                 </a>
             </li>
-            <li class="nav-item" sec:authorize="hasRole('ADMIN')"> <!-- YENİ GÖREV YÖNETİMİ LİNKİ EKLENDİ -->
+            <li class="nav-item" sec:authorize="hasRole('ADMIN')">
                 <a class="nav-link" th:classappend="${activePage == 'gorevler' ? 'active' : ''}" th:href="@{/admin/gorevler}">
                     <i class="fas fa-clipboard-list"></i> Görev Yönetimi
+                </a>
+            </li>
+            <li class="nav-item" sec:authorize="hasRole('ADMIN')">
+                <a class="nav-link" th:classappend="${activePage == 'sensorler' ? 'active' : ''}" th:href="@{/admin/sensorler}">
+                    <i class="fas fa-thermometer-half"></i> Sensör Yönetimi
                 </a>
             </li>
             <!-- Diğer Admin linkleri buraya eklenebilir -->
 
             <li class="nav-header" sec:authorize="hasAnyRole('ADMIN', 'CALISAN')">Genel İşlemler</li>
-            <!-- Çalışanlar için "Görevlerim" linki ayrı bir controller ve path (/gorevlerim) ile yönetilecekse burada kalabilir.
-                 Şimdilik GörevController'ı /admin/gorevler ve Admin rolü ile yaptığımız için
-                 aşağıdaki "Görevlerim" linki farklı bir işlevselliğe sahip olmalı veya kaldırılmalı/düzenlenmeli.
-                 Proje RLS (Satır Düzeyinde Güvenlik) kullandığı için,
-                 Çalışanlar /admin/gorevler adresine gittiğinde sadece kendi görevlerini görebilir.
-                 Bu durumda "Görevlerim" linki de /admin/gorevler'e gidebilir ama yetkilendirmesi
-                 sec:authorize="hasAnyRole('ADMIN', 'CALISAN')" şeklinde olmalı.
-            -->
             <li class="nav-item" sec:authorize="hasAnyRole('ADMIN', 'CALISAN')">
                 <a class="nav-link" th:classappend="${activePage == 'gorevlerim' ? 'active' : ''}"
-                   th:href="${#authorization.expression('hasRole(''ADMIN'')') ? '/admin/gorevler?kullanici=kendim' : '/gorevlerim'}">
-                    <!-- Admin ise tüm görevleri görsün, Çalışan ise kendi görevlerini (farklı bir endpoint ile veya RLS ile aynı endpoint üzerinden) -->
+                   th:href="@{/admin/gorevler}"> <!-- Çalışanlar da kendi görevlerini /admin/gorevler üzerinden (RLS ile) görebilir -->
                     <i class="fas fa-tasks"></i> Görevlerim
                 </a>
             </li>
