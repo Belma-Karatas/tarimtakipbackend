@@ -1,0 +1,92 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org"
+      xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
+      xmlns:sec="http://www.thymeleaf.org/extras/spring-security"
+      layout:decorate="~{layout/main-layout}">
+<head>
+    <title th:text="${pageTitle}">Kullanılan Girdi Listesi</title>
+</head>
+<body>
+<div layout:fragment="content">
+    <div class="container-fluid">
+        <h2 class="my-4" th:text="${pageTitle ?: 'Kullanılan Girdi Yönetimi'}">Kullanılan Girdi Yönetimi</h2>
+
+        <!-- Başarı/Hata Mesajları -->
+        <div th:if="${successMessage}" class="alert alert-success alert-dismissible fade show" role="alert">
+            <span th:text="${successMessage}"></span>
+            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+        </div>
+        <div th:if="${errorMessage}" class="alert alert-danger alert-dismissible fade show" role="alert">
+            <span th:text="${errorMessage}"></span>
+            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+        </div>
+
+        <!-- Yeni Kullanılan Girdi Ekle Butonu (Sadece Admin için) -->
+        <a th:href="@{/admin/kullanilangirdiler/ekle}" class="btn btn-primary mb-3" sec:authorize="hasRole('ADMIN')">
+            <i class="fas fa-plus-circle"></i> Yeni Kullanılan Girdi Ekle
+        </a>
+
+        <!-- Kullanılan Girdi Tablosu -->
+        <div class="table-responsive">
+            <table class="table table-striped table-bordered table-hover">
+                <thead class="table-dark">
+                <tr>
+                    <th>ID</th>
+                    <th>Girdi Adı</th>
+                    <th>Girdi Tipi</th>
+                    <th>Kullanım Tarihi</th>
+                    <th>Miktar</th>
+                    <th>Birim</th>
+                    <th>Maliyet</th>
+                    <th>İlişkili Ekim/Görev</th>
+                    <th>Kaydeden</th>
+                    <th>Notlar</th>
+                    <th style="width: 120px;" sec:authorize="hasRole('ADMIN')">İşlemler</th> <!-- Başlık eklendi ve yetkilendirildi -->
+                </tr>
+                </thead>
+                <tbody>
+                <tr th:each="kgDto : ${kullanilangirdiler}" th:id="'row-kg-' + ${kgDto.kullanimID}">
+                    <td th:text="${kgDto.kullanimID}">1</td>
+                    <td th:text="${kgDto.girdiAdi ?: '-'}">NPK Gübre</td>
+                    <td th:text="${kgDto.girdiTipi ?: '-'}">Gübre</td>
+                    <td th:text="${kgDto.kullanimTarihi != null ? #temporals.format(kgDto.kullanimTarihi, 'dd.MM.yyyy') : '-'}">01.05.2024</td>
+                    <td th:text="${kgDto.miktar != null ? #numbers.formatDecimal(kgDto.miktar, 1, 2, 'COMMA') : '-'}">25.00</td>
+                    <td th:text="${kgDto.girdiBirimi ?: '-'}">kg</td>
+                    <td th:text="${kgDto.kullanilanGirdiMaliyeti != null ? #numbers.formatDecimal(kgDto.kullanilanGirdiMaliyeti, 1, 2, 'COMMA') + ' TL' : '-'}">150.75 TL</td>
+                    <td>
+                        <span th:if="${kgDto.iliskiliEkimID != null}">
+                            Ekim: <span th:text="${kgDto.iliskiliUrunAdi ?: 'Bilinmiyor'}"></span>
+                            (<span th:text="${kgDto.iliskiliTarlaAdi ?: 'Bilinmeyen Tarla'}"></span>)
+                        </span>
+                        <span th:if="${kgDto.iliskiliGorevID != null}">
+                            Görev: <span th:text="${kgDto.iliskiliGorevFaaliyeti ?: 'Bilinmeyen Faaliyet'}"></span>
+                            (<span th:text="${kgDto.iliskiliTarlaAdi ?: 'Bilinmeyen Tarla'}"></span>)
+                        </span>
+                        <span th:if="${kgDto.iliskiliEkimID == null and kgDto.iliskiliGorevID == null}">-</span>
+                    </td>
+                    <td th:text="${kgDto.kaydedenKullanici ?: '-'}">Admin User</td>
+                    <td th:text="${#strings.abbreviate(kgDto.kullanimNotlari, 30) ?: '-'}">Notlar...</td>
+                    <td sec:authorize="hasRole('ADMIN')"> <!-- İşlem butonları sadece Admin için -->
+                        <a th:href="@{/admin/kullanilangirdiler/duzenle/{id}(id=${kgDto.kullanimID})}"
+                           class="btn btn-sm btn-warning me-1" title="Düzenle">
+                            <i class="fas fa-edit"></i>
+                        </a>
+                        <a th:href="@{/admin/kullanilangirdiler/sil/{id}(id=${kgDto.kullanimID})}"
+                           class="btn btn-sm btn-danger"
+                           th:attr="data-girdiadi=${kgDto.girdiAdi}, data-kullanimtarihi=${kgDto.kullanimTarihi != null ? #temporals.format(kgDto.kullanimTarihi, 'dd.MM.yyyy') : ''}"
+                           th:onclick="'return confirm(\'Bu kullanılan girdi kaydını (ID: ' + ${kgDto.kullanimID} + ' - Girdi: ' + this.getAttribute('data-girdiadi') + ' - Tarih: ' + this.getAttribute('data-kullanimtarihi') + ') silmek istediğinizden emin misiniz?\');'"
+                           title="Sil">
+                            <i class="fas fa-trash-alt"></i>
+                        </a>
+                    </td>
+                </tr>
+                <tr th:if="${kullanilangirdiler == null || #lists.isEmpty(kullanilangirdiler)}">
+                    <td colspan="11" class="text-center">Kayıtlı kullanılan girdi bulunamadı.</td> <!-- colspan güncellendi -->
+                </tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+</body>
+</html>

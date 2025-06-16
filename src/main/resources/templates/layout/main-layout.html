@@ -105,6 +105,18 @@
                     <i class="fas fa-thermometer-half"></i> Sensör Yönetimi
                 </a>
             </li>
+            <!-- YENİ EKLENEN LİNKLER -->
+            <li class="nav-item" sec:authorize="hasRole('ADMIN')">
+                <a class="nav-link" th:classappend="${activePage == 'kullanilangirdiler' ? 'active' : ''}" th:href="@{/admin/kullanilangirdiler}">
+                    <i class="fas fa-dolly-flatbed"></i> Kullanılan Girdiler
+                </a>
+            </li>
+            <li class="nav-item" sec:authorize="hasRole('ADMIN')">
+                <a class="nav-link" th:classappend="${activePage == 'hasatlar' ? 'active' : ''}" th:href="@{/admin/hasatlar}">
+                    <i class="fas fa-tractor"></i> Hasat Yönetimi <!-- İkonu değiştirebilirsiniz, fas fa-chart-line, fas fa-warehouse vb. -->
+                </a>
+            </li>
+            <!-- /YENİ EKLENEN LİNKLER -->
             <!-- Diğer Admin linkleri buraya eklenebilir -->
 
             <li class="nav-header" sec:authorize="hasAnyRole('ADMIN', 'CALISAN')">Genel İşlemler</li>

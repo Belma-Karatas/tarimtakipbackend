@@ -1,0 +1,124 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org"
+      xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
+      xmlns:sec="http://www.thymeleaf.org/extras/spring-security"
+      layout:decorate="~{layout/main-layout}">
+<head>
+    <title th:text="${pageTitle}">Kullanılan Girdi Formu</title>
+</head>
+<body>
+<div layout:fragment="content">
+    <div class="container-fluid">
+
+        <h2 th:if="${kullanilanGirdiForm != null and kullanilanGirdiForm.kullanimID == null}" class="my-4" th:text="${pageTitle ?: 'Yeni Kullanılan Girdi Ekle'}">Yeni Kullanılan Girdi Ekle</h2>
+        <h2 th:unless="${kullanilanGirdiForm != null and kullanilanGirdiForm.kullanimID == null}" class="my-4">
+            Kullanılan Girdiyi Düzenle (ID: <span th:text="${kullanilanGirdiForm.kullanimID}"></span>)
+        </h2>
+
+        <form th:action="@{/admin/kullanilangirdiler/kaydet}" th:object="${kullanilanGirdiForm}" method="post">
+            <input type="hidden" th:if="*{kullanimID != null}" th:field="*{kullanimID}" />
+
+            <!-- Hata Mesajları -->
+            <div th:if="${#fields.hasGlobalErrors()}" class="alert alert-danger alert-dismissible fade show" role="alert">
+                <p th:each="err : ${#fields.globalErrors()}" th:text="${err}">Global Hata</p>
+                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+            </div>
+            <div th:if="${#fields.hasErrors('ekimId')}" class="alert alert-danger alert-dismissible fade show" role="alert">
+                <span th:errors="*{ekimId}">Ekim/Görev Seçim Hatası</span>
+                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+            </div>
+            <div th:if="${#fields.hasErrors() and !#fields.hasGlobalErrors() and !#fields.hasErrors('ekimId')}" class="alert alert-danger alert-dismissible fade show" role="alert">
+                 Formda hatalar var. Lütfen işaretli alanları kontrol edin.
+                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+            </div>
+            <div th:if="${errorMessage}" class="alert alert-danger alert-dismissible fade show" role="alert">
+                <span th:text="${errorMessage}"></span>
+                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+            </div>
+
+            <div class="row">
+                <!-- İlişkili Ekim (Admin için veya Çalışan için kilitli değilse) -->
+                <div class="col-md-6 mb-3" th:if="${isAdmin}">
+                    <label for="ekimId" class="form-label">İlişkili Ekim:</label>
+                    <select id="ekimId" th:field="*{ekimId}" class="form-select"
+                            th:classappend="${#fields.hasErrors('ekimId')} ? 'is-invalid' : ''">
+                        <option value="">-- Ekim Seçiniz (Opsiyonel) --</option>
+                        <option th:each="ekim : ${ekimlerListesi}"
+                                th:value="${ekim.ekimID}"
+                                th:text="${ekim.tarla?.tarlaAdi + ' - ' + ekim.urun?.urunAdi + ' (' + #temporals.format(ekim.ekimTarihi, 'dd.MM.yyyy') + ')'}"></option>
+                    </select>
+                </div>
+
+                <!-- İlişkili Görev -->
+                <div class="col-md-6 mb-3">
+                    <label for="gorevId" class="form-label">İlişkili Görev:</label>
+                    <select id="gorevId" th:field="*{gorevId}" class="form-select"
+                            th:classappend="${#fields.hasErrors('gorevId')} ? 'is-invalid' : ''"
+                            th:disabled="${!isAdmin && kullanilanGirdiForm.gorevId != null}">
+                        <option value="">-- Görev Seçiniz (Opsiyonel) --</option>
+                        <option th:each="gorev : ${gorevlerListesi}"
+                                th:value="${gorev.gorevID}"
+                                th:text="${gorev.faaliyetTipi?.tipAdi + ' - ' + (#strings.abbreviate(gorev.aciklama, 30)) + (gorev.atananKullanici != null ? ' (' + gorev.atananKullanici.kullaniciAdi + ')' : '')}"></option>
+                    </select>
+                    <!-- Çalışan için eğer görev ID'si formda set edilmişse, input hidden olarak da eklenebilir -->
+                    <input type="hidden" th:if="${!isAdmin && kullanilanGirdiForm.gorevId != null}" th:field="*{gorevId}" />
+                </div>
+            </div>
+             <small class="form-text text-muted mb-3">Kullanılan girdi bir Ekim VEYA bir Görev ile ilişkilendirilmelidir.</small>
+
+
+            <!-- Girdi Seçimi -->
+            <div class="mb-3">
+                <label for="girdiId" class="form-label">Kullanılan Girdi: <span class="text-danger">*</span></label>
+                <select id="girdiId" th:field="*{girdiId}" class="form-select"
+                        th:classappend="${#fields.hasErrors('girdiId')} ? 'is-invalid' : ''">
+                    <option value="">-- Girdi Seçiniz --</option>
+                    <option th:each="girdi : ${girdilerListesi}"
+                            th:value="${girdi.girdiID}"
+                            th:text="${girdi.girdiAdi + ' (' + girdi.birim + ')'}"></option>
+                </select>
+                <div th:if="${#fields.hasErrors('girdiId')}" th:errors="*{girdiId}" class="invalid-feedback"></div>
+            </div>
+
+            <div class="row">
+                <!-- Kullanım Tarihi -->
+                <div class="col-md-6 mb-3">
+                    <label for="kullanimTarihi" class="form-label">Kullanım Tarihi: <span class="text-danger">*</span></label>
+                    <input type="date" id="kullanimTarihi" th:field="*{kullanimTarihi}" class="form-control"
+                           th:classappend="${#fields.hasErrors('kullanimTarihi')} ? 'is-invalid' : ''" />
+                    <div th:if="${#fields.hasErrors('kullanimTarihi')}" th:errors="*{kullanimTarihi}" class="invalid-feedback"></div>
+                </div>
+
+                <!-- Miktar -->
+                <div class="col-md-6 mb-3">
+                    <label for="miktar" class="form-label">Miktar: <span class="text-danger">*</span></label>
+                    <input type="number" step="0.01" id="miktar" th:field="*{miktar}" class="form-control"
+                           th:classappend="${#fields.hasErrors('miktar')} ? 'is-invalid' : ''" />
+                    <div th:if="${#fields.hasErrors('miktar')}" th:errors="*{miktar}" class="invalid-feedback"></div>
+                </div>
+            </div>
+
+            <!-- Maliyet -->
+            <div class="mb-3">
+                <label for="maliyet" class="form-label">Maliyet (TL):</label>
+                <input type="number" step="0.01" id="maliyet" th:field="*{maliyet}" class="form-control" />
+            </div>
+
+            <!-- Notlar -->
+            <div class="mb-3">
+                <label for="notlar" class="form-label">Notlar:</label>
+                <textarea id="notlar" th:field="*{notlar}" class="form-control" rows="3"></textarea>
+            </div>
+
+            <!-- Butonlar -->
+            <button type="submit" class="btn btn-success">
+                <i class="fas fa-save"></i> Kaydet
+            </button>
+            <a th:href="${isAdmin} ? @{/admin/kullanilangirdiler} : @{/admin/gorevler}" class="btn btn-secondary ms-2">
+                <i class="fas fa-times-circle"></i> İptal
+            </a>
+        </form>
+    </div>
+</div>
+</body>
+</html>
