@@ -4,68 +4,57 @@
       xmlns:sec="http://www.thymeleaf.org/extras/spring-security"
       layout:decorate="~{layout/main-layout}">
 <head>
-    <title>Admin - Tarla Listesi</title>
+    <title th:text="${pageTitle}">Hasat Kayıtları</title>
+    <!-- Bu sayfaya özel CSS veya JS linkleri gerekirse buraya eklenebilir (layout:fragment="styles" veya scripts ile) -->
 </head>
-<body>
-<div layout:fragment="content">
-    <div class="container-fluid">
-        <h2 class="my-4">Tarla Yönetimi</h2>
+<body> <!-- BU BODY ETİKETİ LAYOUT DIALECT TARAFINDAN İŞLENİR VE ANA LAYOUT'TAKİ BODY İLE BİRLEŞTİRİLİR -->
 
-        <div th:if="${successMessage}" class="alert alert-success alert-dismissible fade show" role="alert">
-            <span th:text="${successMessage}"></span>
-            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
-        </div>
-        <div th:if="${errorMessage}" class="alert alert-danger alert-dismissible fade show" role="alert">
-            <span th:text="${errorMessage}"></span>
-            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
-        </div>
+    <div layout:fragment="content"> <!-- Sadece bu div ve içeriği ana layout'taki content alanına gider -->
+        <div class="container-fluid">
+            <h2 class="my-4" th:text="${pageTitle ?: 'Hasat Yönetimi'}">Hasat Yönetimi</h2>
+            <div th:if="${successMessage}" class="alert alert-success alert-dismissible fade show"><span th:text="${successMessage}"></span><button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button></div>
+            <div th:if="${errorMessage}" class="alert alert-danger alert-dismissible fade show"><span th:text="${errorMessage}"></span><button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button></div>
+            
+            <a th:href="@{/admin/hasatlar/ekle}" class="btn btn-primary mb-3" sec:authorize="hasRole('ADMIN')">
+                <i class="fas fa-plus-circle"></i> Yeni Hasat Kaydı
+            </a>
 
-        <a th:href="@{/admin/tarlalar/ekle}" class="btn btn-primary mb-3">
-            <i class="fas fa-plus-circle"></i> Yeni Tarla Ekle
-        </a>
-
-        <div class="table-responsive">
-            <table class="table table-striped table-bordered table-hover">
-                <thead class="table-dark">
-                <tr>
-                    <th>ID</th>
-                    <th>Tarla Adı</th>
-                    <th>Alan (Dönüm)</th>
-                    <th>Toprak Tipi</th>
-                    <th>Sulama Sistemi</th>
-                    <th>Açıklama</th>
-                    <th style="width: 150px;">İşlemler</th>
-                </tr>
-                </thead>
-                <tbody>
-                <tr th:each="tarlaDto : ${tarlalar}">
-                    <td th:text="${tarlaDto.tarlaID}">1</td>
-                    <td th:text="${tarlaDto.tarlaAdi}">Ana Tarla</td>
-                    <td th:text="${tarlaDto.alan != null ? #numbers.formatDecimal(tarlaDto.alan, 1, 2, 'COMMA') : '-'}">150.75</td>
-                    <td th:text="${tarlaDto.toprakTipi ?: '-'}">Killi</td>
-                    <td th:text="${tarlaDto.sulamaSistemi ?: '-'}">Damlama</td>
-                    <td th:text="${#strings.abbreviate(tarlaDto.tarlaAciklamasi, 50)}">Açıklama...</td>
-                    <td>
-                        <a th:href="@{/admin/tarlalar/duzenle/{id}(id=${tarlaDto.tarlaID})}"
-                           class="btn btn-sm btn-warning me-1" title="Düzenle">
-                            <i class="fas fa-edit"></i>
-                        </a>
-                        <a th:href="@{/admin/tarlalar/sil/{id}(id=${tarlaDto.tarlaID})}"
-                           class="btn btn-sm btn-danger"
-                           th:attr="data-tarlaadi=${tarlaDto.tarlaAdi}"
-                           onclick="return confirm('Bu tarlayı (' + this.getAttribute('data-tarlaadi') + ') silmek istediğinizden emin misiniz? Bu işlem geri alınamaz!');"
-                           title="Sil">
-                            <i class="fas fa-trash-alt"></i>
-                        </a>
-                    </td>
-                </tr>
-                <tr th:if="${tarlalar == null || #lists.isEmpty(tarlalar)}">
-                    <td colspan="7" class="text-center">Kayıtlı tarla bulunamadı.</td>
-                </tr>
-                </tbody>
-            </table>
+            <div class="table-responsive">
+                <table class="table table-striped table-bordered table-hover">
+                    <thead class="table-dark">
+                    <tr>
+                        <th>ID</th><th>Tarla</th><th>Ürün</th><th>Hasat Tarihi</th><th>Miktar</th><th>Birim</th><th>Kalite</th><th>Kaydeden</th>
+                        <th sec:authorize="hasRole('ADMIN')">İşlemler</th>
+                    </tr>
+                    </thead>
+                    <tbody>
+                    <tr th:each="h : ${hasatlar}" th:id="'row-hasat-' + ${h.hasatID}">
+                        <td th:text="${h.hasatID}">1</td>
+                        <td th:text="${h.tarlaAdi ?: '-'}">Tarla A</td>
+                        <td th:text="${h.urunAdi ?: '-'}">Domates</td>
+                        <td th:text="${h.hasatTarihi != null ? #temporals.format(h.hasatTarihi, 'dd.MM.yyyy') : '-'}">01.08.2024</td>
+                        <td th:text="${h.toplananMiktar != null ? #numbers.formatDecimal(h.toplananMiktar, 1, 2, 'COMMA') : '-'}">500.00</td>
+                        <td th:text="${h.hasatBirimi ?: '-'}">kg</td>
+                        <td th:text="${h.hasatKalitesi ?: '-'}">1. Kalite</td>
+                        <td th:text="${h.kaydedenKullanici ?: '-'}">Admin</td>
+                        <td sec:authorize="hasRole('ADMIN')">
+                            <a th:href="@{/admin/hasatlar/duzenle/{id}(id=${h.hasatID})}" class="btn btn-sm btn-warning me-1" title="Düzenle"><i class="fas fa-edit"></i></a>
+                            <a th:href="@{/admin/hasatlar/sil/{id}(id=${h.hasatID})}"
+                               class="btn btn-sm btn-danger"
+                               th:attr="data-urunadi=${h.urunAdi}, data-hasattarihi=${h.hasatTarihi != null ? #temporals.format(h.hasatTarihi, 'dd.MM.yyyy') : ''}"
+                               th:onclick="'return confirm(\'Bu hasat kaydını (ID: ' + ${h.hasatID} + ' - Ürün: ' + this.getAttribute('data-urunadi') + ' - Tarih: ' + this.getAttribute('data-hasattarihi') + ') silmek istediğinizden emin misiniz?\');'"
+                               title="Sil">
+                                <i class="fas fa-trash-alt"></i>
+                            </a>
+                        </td>
+                    </tr>
+                    <tr th:if="${hasatlar == null || #lists.isEmpty(hasatlar)}">
+                        <td th:attr="colspan=${#authorization.expression('hasRole(''ADMIN'')') ? '9' : '8'}" class="text-center">Kayıtlı hasat bulunamadı.</td>
+                    </tr>
+                    </tbody>
+                </table>
+            </div>
         </div>
     </div>
-</div>
 </body>
 </html>

@@ -41,7 +41,7 @@
                     <th>İlişkili Ekim/Görev</th>
                     <th>Kaydeden</th>
                     <th>Notlar</th>
-                    <th style="width: 120px;" sec:authorize="hasRole('ADMIN')">İşlemler</th> <!-- Başlık eklendi ve yetkilendirildi -->
+                    <th style="width: 120px;" sec:authorize="hasRole('ADMIN')">İşlemler</th> <!-- İşlemler Başlığı EKLENDİ -->
                 </tr>
                 </thead>
                 <tbody>
@@ -66,7 +66,7 @@
                     </td>
                     <td th:text="${kgDto.kaydedenKullanici ?: '-'}">Admin User</td>
                     <td th:text="${#strings.abbreviate(kgDto.kullanimNotlari, 30) ?: '-'}">Notlar...</td>
-                    <td sec:authorize="hasRole('ADMIN')"> <!-- İşlem butonları sadece Admin için -->
+                    <td sec:authorize="hasRole('ADMIN')"> <!-- Düzenle ve Sil Butonları EKLENDİ -->
                         <a th:href="@{/admin/kullanilangirdiler/duzenle/{id}(id=${kgDto.kullanimID})}"
                            class="btn btn-sm btn-warning me-1" title="Düzenle">
                             <i class="fas fa-edit"></i>
@@ -81,7 +81,7 @@
                     </td>
                 </tr>
                 <tr th:if="${kullanilangirdiler == null || #lists.isEmpty(kullanilangirdiler)}">
-                    <td colspan="11" class="text-center">Kayıtlı kullanılan girdi bulunamadı.</td> <!-- colspan güncellendi -->
+                    <td th:attr="colspan=${#authorization.expression('hasRole(''ADMIN'')') ? '11' : '10'}" class="text-center">Kayıtlı kullanılan girdi bulunamadı.</td> <!-- Colspan güncellendi -->
                 </tr>
                 </tbody>
             </table>
