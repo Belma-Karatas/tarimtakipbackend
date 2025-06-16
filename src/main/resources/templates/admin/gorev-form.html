@@ -1,0 +1,143 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org"
+      xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
+      layout:decorate="~{layout/main-layout}">
+<head>
+    <title th:text="${pageTitle}">Görev Formu</title>
+</head>
+<body>
+<div layout:fragment="content">
+    <div class="container-fluid">
+
+        <!-- Başlık -->
+        <h2 th:if="${gorevForm != null and gorevForm.gorevID == null}" class="my-4">Yeni Görev Ata/Ekle</h2>
+        <h2 th:unless="${gorevForm != null and gorevForm.gorevID == null}" class="my-4">
+            Görevi Düzenle (ID: <span th:text="${gorevForm.gorevID}"></span>)
+        </h2>
+
+        <!-- Form -->
+        <form th:action="@{/admin/gorevler/kaydet}" th:object="${gorevForm}" method="post">
+            <input type="hidden" th:if="*{gorevID != null}" th:field="*{gorevID}" />
+
+            <!-- Hata Mesajları -->
+            <div th:if="${#fields.hasGlobalErrors()}" class="alert alert-danger alert-dismissible fade show" role="alert">
+                <p th:each="err : ${#fields.globalErrors()}" th:text="${err}">Global Hata</p>
+                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+            </div>
+            <div th:if="${#fields.hasErrors() and !#fields.hasGlobalErrors()}" class="alert alert-danger alert-dismissible fade show" role="alert">
+                 Formda hatalar var. Lütfen işaretli alanları kontrol edin.
+                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+            </div>
+            <div th:if="${errorMessage}" class="alert alert-danger alert-dismissible fade show" role="alert">
+                <span th:text="${errorMessage}"></span>
+                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+            </div>
+
+            <!-- İlişkili Ekim (Opsiyonel) -->
+            <div class="mb-3">
+                <label for="ekimId" class="form-label">İlişkili Ekim:</label>
+                <select id="ekimId" th:field="*{ekimId}" class="form-select">
+                    <option value="">-- Ekim Seçiniz (Opsiyonel) --</option>
+                    <option th:each="ekim : ${ekimler}"
+                            th:value="${ekim.ekimID}"
+                            th:text="${ekim.tarla?.tarlaAdi + ' - ' + ekim.urun?.urunAdi + ' (' + #temporals.format(ekim.ekimTarihi, 'dd.MM.yyyy') + ')'}"></option>
+                </select>
+            </div>
+
+            <!-- İlişkili Tarla (Opsiyonel, Ekim seçilmemişse) -->
+            <div class="mb-3">
+                <label for="tarlaId" class="form-label">İlişkili Tarla: (Ekim seçilmemişse)</label>
+                <select id="tarlaId" th:field="*{tarlaId}" class="form-select"
+                        th:classappend="${#fields.hasErrors('tarlaId')} ? 'is-invalid' : ''">
+                    <option value="">-- Tarla Seçiniz (Opsiyonel) --</option>
+                    <option th:each="tarla : ${tarlalar}"
+                            th:value="${tarla.tarlaID}"
+                            th:text="${tarla.tarlaAdi}"></option>
+                </select>
+                 <div th:if="${#fields.hasErrors('tarlaId')}" th:errors="*{tarlaId}" class="invalid-feedback"></div>
+            </div>
+             <small class="form-text text-muted">Görev ya bir ekimle ya da doğrudan bir tarla ile ilişkilendirilmelidir.</small>
+
+
+            <!-- Faaliyet Tipi -->
+            <div class="mb-3">
+                <label for="faaliyetTipiId" class="form-label">Faaliyet Tipi: <span class="text-danger">*</span></label>
+                <select id="faaliyetTipiId" th:field="*{faaliyetTipiId}" class="form-select"
+                        th:classappend="${#fields.hasErrors('faaliyetTipiId')} ? 'is-invalid' : ''">
+                    <option value="">-- Faaliyet Tipi Seçiniz --</option>
+                    <option th:each="ft : ${faaliyetTipleri}"
+                            th:value="${ft.faaliyetTipiID}"
+                            th:text="${ft.tipAdi}"></option>
+                </select>
+                <div th:if="${#fields.hasErrors('faaliyetTipiId')}" th:errors="*{faaliyetTipiId}" class="invalid-feedback"></div>
+            </div>
+
+            <!-- Açıklama -->
+            <div class="mb-3">
+                <label for="aciklama" class="form-label">Açıklama: <span class="text-danger">*</span></label>
+                <textarea id="aciklama" th:field="*{aciklama}" class="form-control" rows="3"
+                          th:classappend="${#fields.hasErrors('aciklama')} ? 'is-invalid' : ''"></textarea>
+                <div th:if="${#fields.hasErrors('aciklama')}" th:errors="*{aciklama}" class="invalid-feedback"></div>
+            </div>
+
+            <!-- Atanan Kullanıcı -->
+            <div class="mb-3">
+                <label for="atananKullaniciId" class="form-label">Atanacak Kullanıcı:</label>
+                <select id="atananKullaniciId" th:field="*{atananKullaniciId}" class="form-select">
+                    <option value="">-- Kullanıcı Seçiniz (Opsiyonel) --</option>
+                    <option th:each="kullanici : ${kullanicilar}"
+                            th:value="${kullanici.kullaniciID}"
+                            th:text="${kullanici.ad + ' ' + kullanici.soyad + ' (' + kullanici.kullaniciAdi + ')'}"></option>
+                </select>
+            </div>
+
+            <!-- Planlanan Başlangıç Tarihi -->
+            <div class="mb-3">
+                <label for="planlananBaslangicTarihi" class="form-label">Planlanan Başlangıç Tarihi:</label>
+                <input type="datetime-local" id="planlananBaslangicTarihi" th:field="*{planlananBaslangicTarihi}" class="form-control"/>
+            </div>
+
+            <!-- Planlanan Bitiş Tarihi -->
+            <div class="mb-3">
+                <label for="planlananBitisTarihi" class="form-label">Planlanan Bitiş Tarihi:</label>
+                <input type="datetime-local" id="planlananBitisTarihi" th:field="*{planlananBitisTarihi}" class="form-control"/>
+            </div>
+
+            <!-- Tamamlanma Tarihi (Sadece düzenleme ve durum tamamlandı ise gösterilebilir) -->
+             <div class="mb-3" th:if="*{gorevID != null}">
+                <label for="tamamlanmaTarihi" class="form-label">Tamamlanma Tarihi:</label>
+                <input type="datetime-local" id="tamamlanmaTarihi" th:field="*{tamamlanmaTarihi}" class="form-control"/>
+            </div>
+
+            <!-- Durum -->
+            <div class="mb-3">
+                <label for="durum" class="form-label">Durum:</label>
+                <select id="durum" th:field="*{durum}" class="form-select">
+                    <option value="">-- Durum Seçiniz --</option>
+                    <option th:each="d : ${durumListesi}" th:value="${d}" th:text="${d}"></option>
+                </select>
+            </div>
+
+            <!-- Öncelik -->
+            <div class="mb-3">
+                <label for="oncelik" class="form-label">Öncelik:</label>
+                 <select id="oncelik" th:field="*{oncelik}" class="form-select">
+                    <option value="">-- Öncelik Seçiniz --</option>
+                    <option th:each="o : ${oncelikListesi}" th:value="${o}" th:text="${o}"></option>
+                </select>
+            </div>
+
+
+            <!-- Butonlar -->
+            <button type="submit" class="btn btn-success">
+                <i class="fas fa-save"></i> Kaydet
+            </button>
+            <a th:href="@{/admin/gorevler}" class="btn btn-secondary ms-2">
+                <i class="fas fa-times-circle"></i> İptal
+            </a>
+        </form>
+
+    </div>
+</div>
+</body>
+</html>

@@ -1,0 +1,115 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org"
+      xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
+      layout:decorate="~{layout/main-layout}">
+<head>
+    <title th:text="${pageTitle}">Ekim Formu</title>
+</head>
+<body>
+<div layout:fragment="content">
+    <div class="container-fluid">
+
+        <!-- Başlık -->
+        <h2 th:if="${ekimForm != null and ekimForm.ekimID == null}" class="my-4">Yeni Ekim Kaydı/Planı</h2>
+        <h2 th:unless="${ekimForm != null and ekimForm.ekimID == null}" class="my-4">
+            Ekimi Düzenle (ID: <span th:text="${ekimForm.ekimID}"></span>)
+        </h2>
+
+        <!-- Form -->
+        <form th:action="@{/admin/ekimler/kaydet}" th:object="${ekimForm}" method="post">
+            <input type="hidden" th:if="*{ekimID != null}" th:field="*{ekimID}" />
+
+            <!-- Hata Mesajları -->
+            <div th:if="${#fields.hasGlobalErrors()}" class="alert alert-danger alert-dismissible fade show" role="alert">
+                <p th:each="err : ${#fields.globalErrors()}" th:text="${err}">Global Hata</p>
+                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+            </div>
+             <div th:if="${#fields.hasErrors() and !#fields.hasGlobalErrors()}" class="alert alert-danger alert-dismissible fade show" role="alert">
+                 Formda hatalar var. Lütfen işaretli alanları kontrol edin.
+                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+            </div>
+            <div th:if="${errorMessage}" class="alert alert-danger alert-dismissible fade show" role="alert">
+                <span th:text="${errorMessage}"></span>
+                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+            </div>
+
+            <!-- Tarla Seçimi -->
+            <div class="mb-3">
+                <label for="tarlaId" class="form-label">Tarla: <span class="text-danger">*</span></label>
+                <select id="tarlaId" th:field="*{tarlaId}" class="form-select"
+                        th:classappend="${#fields.hasErrors('tarlaId')} ? 'is-invalid' : ''">
+                    <option value="">-- Tarla Seçiniz --</option>
+                    <option th:each="tarla : ${tarlalar}"
+                            th:value="${tarla.tarlaID}"
+                            th:text="${tarla.tarlaAdi}"></option>
+                </select>
+                <div th:if="${#fields.hasErrors('tarlaId')}" th:errors="*{tarlaId}" class="invalid-feedback"></div>
+            </div>
+
+            <!-- Ürün Seçimi -->
+            <div class="mb-3">
+                <label for="urunId" class="form-label">Ürün: <span class="text-danger">*</span></label>
+                <select id="urunId" th:field="*{urunId}" class="form-select"
+                        th:classappend="${#fields.hasErrors('urunId')} ? 'is-invalid' : ''">
+                    <option value="">-- Ürün Seçiniz --</option>
+                    <option th:each="urun : ${urunler}"
+                            th:value="${urun.urunID}"
+                            th:text="${urun.urunAdi}"></option>
+                </select>
+                <div th:if="${#fields.hasErrors('urunId')}" th:errors="*{urunId}" class="invalid-feedback"></div>
+            </div>
+
+            <!-- Ekim Tarihi -->
+            <div class="mb-3">
+                <label for="ekimTarihi" class="form-label">Ekim Tarihi: <span class="text-danger">*</span></label>
+                <input type="date" id="ekimTarihi" th:field="*{ekimTarihi}" class="form-control"
+                       th:classappend="${#fields.hasErrors('ekimTarihi')} ? 'is-invalid' : ''" />
+                <div th:if="${#fields.hasErrors('ekimTarihi')}" th:errors="*{ekimTarihi}" class="invalid-feedback"></div>
+            </div>
+
+            <!-- Planlanan Hasat Tarihi -->
+            <div class="mb-3">
+                <label for="planlananHasatTarihi" class="form-label">Planlanan Hasat Tarihi:</label>
+                <input type="date" id="planlananHasatTarihi" th:field="*{planlananHasatTarihi}" class="form-control"
+                       th:classappend="${#fields.hasErrors('planlananHasatTarihi')} ? 'is-invalid' : ''" />
+                <div th:if="${#fields.hasErrors('planlananHasatTarihi')}" th:errors="*{planlananHasatTarihi}" class="invalid-feedback"></div>
+            </div>
+
+            <!-- Ekilen Miktar/Açıklama -->
+            <div class="mb-3">
+                <label for="ekilenMiktarAciklama" class="form-label">Ekilen Miktar/Açıklama:</label>
+                <input type="text" id="ekilenMiktarAciklama" th:field="*{ekilenMiktarAciklama}" class="form-control" />
+            </div>
+
+            <!-- Durum -->
+            <div class="mb-3">
+                <label for="durum" class="form-label">Durum:</label>
+                <!-- Basit bir text input, daha sonra dropdown yapılabilir -->
+                <input type="text" id="durum" th:field="*{durum}" class="form-control" placeholder="Örn: Planlandı, Ekildi"/>
+                 <!-- Veya bir dropdown:
+                <select id="durum" th:field="*{durum}" class="form-select">
+                    <option value="">-- Durum Seçiniz --</option>
+                    <option th:each="d : ${durumListesi}" th:value="${d}" th:text="${d}"></option>
+                </select>
+                 -->
+            </div>
+
+            <!-- Notlar -->
+            <div class="mb-3">
+                <label for="notlar" class="form-label">Notlar:</label>
+                <textarea id="notlar" th:field="*{notlar}" class="form-control" rows="3"></textarea>
+            </div>
+
+            <!-- Butonlar -->
+            <button type="submit" class="btn btn-success">
+                <i class="fas fa-save"></i> Kaydet
+            </button>
+            <a th:href="@{/admin/ekimler}" class="btn btn-secondary ms-2">
+                <i class="fas fa-times-circle"></i> İptal
+            </a>
+        </form>
+
+    </div>
+</div>
+</body>
+</html>

@@ -1,0 +1,86 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org"
+      xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
+      layout:decorate="~{layout/main-layout}">
+<head>
+    <title th:text="${pageTitle}">Ürün Formu</title>
+</head>
+<body>
+<div layout:fragment="content">
+    <div class="container-fluid">
+
+        <!-- Başlık -->
+        <h2 th:if="${urunForm != null and urunForm.urunID == null}" class="my-4">Yeni Ürün Ekle</h2>
+        <h2 th:unless="${urunForm != null and urunForm.urunID == null}" class="my-4">
+            Ürünü Düzenle (
+            <span th:if="${urunForm != null and urunForm.urunAdi != null}" th:text="${urunForm.urunAdi}"></span>
+            <span th:if="${urunForm != null and urunForm.urunAdi == null and urunForm.urunID != null}" th:text="'ID: ' + ${urunForm.urunID}"></span>
+            )
+        </h2>
+
+        <!-- Form -->
+        <form th:action="@{/admin/urunler/kaydet}" th:object="${urunForm}" method="post">
+            <input type="hidden" th:if="*{urunID != null}" th:field="*{urunID}" />
+
+            <!-- Hata Mesajları -->
+            <div th:if="${#fields.hasGlobalErrors()}" class="alert alert-danger alert-dismissible fade show" role="alert">
+                <p th:each="err : ${#fields.globalErrors()}" th:text="${err}">Global Hata</p>
+                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+            </div>
+            <div th:if="${#fields.hasErrors() and !#fields.hasGlobalErrors()}" class="alert alert-danger alert-dismissible fade show" role="alert">
+                 Formda hatalar var. Lütfen işaretli alanları kontrol edin.
+                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+            </div>
+            <div th:if="${errorMessage}" class="alert alert-danger alert-dismissible fade show" role="alert">
+                <span th:text="${errorMessage}"></span>
+                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+            </div>
+
+            <!-- Ürün Adı -->
+            <div class="mb-3">
+                <label for="urunAdi" class="form-label">Ürün Adı: <span class="text-danger">*</span></label>
+                <input type="text" id="urunAdi" th:field="*{urunAdi}" class="form-control"
+                       th:classappend="${#fields.hasErrors('urunAdi')} ? 'is-invalid' : ''" />
+                <div th:if="${#fields.hasErrors('urunAdi')}" th:errors="*{urunAdi}" class="invalid-feedback"></div>
+            </div>
+
+            <!-- Kategori -->
+            <div class="mb-3">
+                <label for="kategoriId" class="form-label">Kategori: <span class="text-danger">*</span></label>
+                <select id="kategoriId" th:field="*{kategoriId}" class="form-select"
+                        th:classappend="${#fields.hasErrors('kategoriId')} ? 'is-invalid' : ''">
+                    <option value="">-- Kategori Seçiniz --</option>
+                    <option th:each="kategori : ${urunKategorileri}"
+                            th:value="${kategori.kategoriID}"
+                            th:text="${kategori.kategoriAdi}"></option>
+                </select>
+                <div th:if="${#fields.hasErrors('kategoriId')}" th:errors="*{kategoriId}" class="invalid-feedback"></div>
+            </div>
+
+            <!-- Birim -->
+            <div class="mb-3">
+                <label for="birim" class="form-label">Birim:</label>
+                <input type="text" id="birim" th:field="*{birim}" class="form-control"
+                       th:classappend="${#fields.hasErrors('birim')} ? 'is-invalid' : ''"/>
+                <div th:if="${#fields.hasErrors('birim')}" th:errors="*{birim}" class="invalid-feedback"></div>
+            </div>
+
+            <!-- Açıklama -->
+            <div class="mb-3">
+                <label for="aciklama" class="form-label">Açıklama:</label>
+                <textarea id="aciklama" th:field="*{aciklama}" class="form-control" rows="3"></textarea>
+            </div>
+
+            <!-- Butonlar -->
+            <button type="submit" class="btn btn-success">
+                <i class="fas fa-save"></i> Kaydet
+            </button>
+            <a th:href="@{/admin/urunler}" class="btn btn-secondary ms-2">
+                <i class="fas fa-times-circle"></i> İptal
+            </a>
+        </form>
+
+    </div>
+</div>
+</body>
+</html>
