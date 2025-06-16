@@ -14,7 +14,7 @@ import org.springframework.security.web.util.matcher.AntPathRequestMatcher;
 
 @Configuration
 @EnableWebSecurity
-@EnableMethodSecurity // Metot seviyesi @PreAuthorize anotasyonlarını etkinleştirir
+@EnableMethodSecurity
 public class SecurityConfig {
 
     @Autowired
@@ -30,22 +30,27 @@ public class SecurityConfig {
         http
             .authorizeHttpRequests(authorize -> authorize
                 .requestMatchers("/login", "/register", "/css/**", "/js/**", "/images/**", "/favicon.ico").permitAll()
-                
-                // --- YENİ EKLENEN/DÜZENLENEN KISIM BAŞLANGICI ---
-                // Çalışanların da erişebileceği GÖREV ile ilgili spesifik admin yolları:
+
+                // GÖREV YÖNETİMİ YETKİLERİ
                 .requestMatchers("/admin/gorevler", "/admin/gorevler/duzenle/**", "/admin/gorevler/kaydet").hasAnyRole("ADMIN", "CALISAN")
-                
-                // Sadece Admin'in erişebileceği GÖREV ile ilgili spesifik admin yolları:
                 .requestMatchers("/admin/gorevler/ekle", "/admin/gorevler/sil/**").hasRole("ADMIN")
-                // --- YENİ EKLENEN/DÜZENLENEN KISIM SONU ---
-                
+
+                // SENSÖR OKUMA YÖNETİMİ YETKİLERİ (YENİ EKLENENLER)
+                .requestMatchers("/admin/sensorler").hasAnyRole("ADMIN", "CALISAN") // Sensörleri listeleme
+                .requestMatchers("/admin/sensorler/okuma/ekle").hasAnyRole("ADMIN", "CALISAN") // Okuma ekleme formu
+                .requestMatchers("/admin/sensorler/okuma/kaydet").hasAnyRole("ADMIN", "CALISAN") // Okuma kaydetme işlemi
+                .requestMatchers("/admin/sensorler/{sensorId}/okumalar").hasAnyRole("ADMIN", "CALISAN") // Belirli sensör okumalarını listeleme
+
+                // SENSÖR YÖNETİMİ (Tanımlama, Düzenleme, Silme - Sadece Admin)
+                // Diğer /admin/sensorler/** altındaki yollar (ekle, duzenle, sil) Admin'e özel kalacak.
+                // Bu, genel /admin/** kuralından önce gelmeli ki daha spesifik olan bu kurallar ezilmesin.
+                .requestMatchers("/admin/sensorler/ekle", "/admin/sensorler/duzenle/**", "/admin/sensorler/sil/**").hasRole("ADMIN")
+
                 // Diğer tüm /admin/** yolları sadece Admin'e:
+                // Bu kural, yukarıdaki daha spesifik /admin/sensorler/... kurallarından SONRA gelmeli.
                 .requestMatchers("/admin/**").hasRole("ADMIN")
-                
-                // Eğer /calisan diye ayrı bir prefix'iniz varsa (şu an için yok gibi duruyor):
-                // .requestMatchers("/calisan/**").hasAnyRole("CALISAN", "ADMIN") 
-                
-                .anyRequest().authenticated() // Diğer tüm istekler kimlik doğrulama gerektirir
+
+                .anyRequest().authenticated()
             )
             .formLogin(form -> form
                 .loginPage("/login")
@@ -61,7 +66,7 @@ public class SecurityConfig {
                 .deleteCookies("JSESSIONID")
                 .permitAll()
             )
-            .csrf(csrf -> csrf.disable()); // Test için CSRF kapalı
+            .csrf(csrf -> csrf.disable());
 
         return http.build();
     }

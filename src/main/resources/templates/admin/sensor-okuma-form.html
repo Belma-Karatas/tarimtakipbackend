@@ -1,0 +1,103 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org"
+      xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
+      layout:decorate="~{layout/main-layout}">
+<head>
+    <title th:text="${pageTitle}">Sensör Okuma Formu</title>
+</head>
+<body>
+<div layout:fragment="content">
+    <div class="container-fluid">
+        <h2 class="my-4" th:text="${pageTitle ?: 'Yeni Sensör Okuması Ekle'}">Yeni Sensör Okuması Ekle</h2>
+
+        <form th:action="@{/admin/sensorler/okuma/kaydet}" th:object="${sensorOkumaForm}" method="post">
+            <input type="hidden" th:if="*{okumaID != null}" th:field="*{okumaID}" />
+
+            <div th:if="${#fields.hasGlobalErrors()}" class="alert alert-danger alert-dismissible fade show" role="alert">
+                <p th:each="err : ${#fields.globalErrors()}" th:text="${err}">Global Hata</p>
+                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+            </div>
+            <div th:if="${#fields.hasErrors('*') and !#fields.hasGlobalErrors()}" class="alert alert-danger alert-dismissible fade show" role="alert">
+                 Formda hatalar var. Lütfen işaretli alanları kontrol edin.
+                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+            </div>
+             <div th:if="${errorMessage}" class="alert alert-danger alert-dismissible fade show" role="alert">
+                <span th:text="${errorMessage}"></span>
+                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+            </div>
+
+            <div class="mb-3">
+                <label for="sensorId" class="form-label">Sensör: <span class="text-danger">*</span></label>
+                <select id="sensorId" th:field="*{sensorId}" class="form-select"
+                        th:classappend="${#fields.hasErrors('sensorId')} ? 'is-invalid' : ''">
+                    <option value="">-- Sensör Seçiniz --</option>
+                    <option th:each="sensor : ${sensorlerListesi}"
+                            th:value="${sensor.sensorID}"
+                            th:text="${sensor.sensorKodu + ' (' + sensor.tarlaAdi + ' - ' + sensor.sensorTipi + ')'}"
+                            th:attr="data-birim=${sensor.olcumBirimi}"></option>
+                </select>
+                <div th:if="${#fields.hasErrors('sensorId')}" th:errors="*{sensorId}" class="invalid-feedback"></div>
+            </div>
+
+            <div class="mb-3">
+                <label for="okumaZamani" class="form-label">Okuma Zamanı: <span class="text-danger">*</span></label>
+                <input type="datetime-local" id="okumaZamani" th:field="*{okumaZamani}" class="form-control"
+                       th:classappend="${#fields.hasErrors('okumaZamani')} ? 'is-invalid' : ''" />
+                <div th:if="${#fields.hasErrors('okumaZamani')}" th:errors="*{okumaZamani}" class="invalid-feedback"></div>
+            </div>
+
+            <div class="mb-3">
+                <label for="deger" class="form-label">Okunan Değer: <span class="text-danger">*</span></label>
+                <input type="text" id="deger" th:field="*{deger}" class="form-control"
+                       th:classappend="${#fields.hasErrors('deger')} ? 'is-invalid' : ''" />
+                <div th:if="${#fields.hasErrors('deger')}" th:errors="*{deger}" class="invalid-feedback"></div>
+            </div>
+
+            <div class="mb-3">
+                <label for="birim" class="form-label">Birim:</label>
+                <input type="text" id="birim" th:field="*{birim}" class="form-control" placeholder="Sensör tipine göre otomatik gelebilir"/>
+            </div>
+
+            <button type="submit" class="btn btn-success">
+                <i class="fas fa-save"></i> Okumayı Kaydet
+            </button>
+            <a th:href="@{/admin/sensorler}" class="btn btn-secondary ms-2">
+                <i class="fas fa-times-circle"></i> İptal
+            </a>
+        </form>
+    </div>
+
+    <script th:inline="javascript">
+    /*<![CDATA[*/
+        document.addEventListener('DOMContentLoaded', function() {
+            const sensorSelect = document.getElementById('sensorId');
+            const birimInput = document.getElementById('birim');
+
+            if (sensorSelect && birimInput) {
+                sensorSelect.addEventListener('change', function() {
+                    const selectedOption = this.options[this.selectedIndex];
+                    const birim = selectedOption.getAttribute('data-birim');
+                    if (birim && birim !== 'null' && birim.trim() !== '') {
+                        birimInput.value = birim;
+                    } else {
+                        birimInput.value = '';
+                    }
+                });
+
+                if (sensorSelect.value) {
+                    const selectedOption = sensorSelect.options[sensorSelect.selectedIndex];
+                     const birim = selectedOption.getAttribute('data-birim');
+                    if (birim && birim !== 'null' && birim.trim() !== '') {
+                        if (!birimInput.value) {
+                             birimInput.value = birim;
+                        }
+                    }
+                }
+            }
+        });
+    /*]]>*/
+    </script>
+
+</div>
+</body>
+</html>

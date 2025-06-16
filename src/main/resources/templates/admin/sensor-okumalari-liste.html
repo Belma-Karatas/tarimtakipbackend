@@ -1,0 +1,93 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org"
+      xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
+      xmlns:sec="http://www.thymeleaf.org/extras/spring-security"
+      layout:decorate="~{layout/main-layout}">
+<head>
+    <title th:text="${pageTitle}">Sensör Okumaları</title>
+    <style>
+        .table-hover tbody tr:hover {
+            background-color: #f5f5f5;
+        }
+        .table th, .table td {
+            vertical-align: middle;
+        }
+        /* Renklendirme için örnek CSS sınıfları (isteğe bağlı) */
+        .okuma-deger-normal { color: green; }
+        .okuma-deger-uyari { color: orange; font-weight: bold; }
+        .okuma-deger-kritik { color: red; font-weight: bold; background-color: #ffeeee; }
+    </style>
+</head>
+<body>
+<div layout:fragment="content">
+    <div class="container-fluid">
+        <h2 class="my-4" th:text="${pageTitle ?: 'Sensör Okumaları'}">Sensör Okumaları</h2>
+
+        <div th:if="${successMessage}" class="alert alert-success alert-dismissible fade show" role="alert">
+            <span th:text="${successMessage}"></span>
+            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+        </div>
+        <div th:if="${errorMessage}" class="alert alert-danger alert-dismissible fade show" role="alert">
+            <span th:text="${errorMessage}"></span>
+            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+        </div>
+        <div th:if="${errorMessageOkumalar}" class="alert alert-warning alert-dismissible fade show" role="alert">
+            <span th:text="${errorMessageOkumalar}"></span>
+            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+        </div>
+
+        <div th:if="${sensor}" class="card mb-4">
+            <div class="card-header">
+                <h5 class="mb-0">Sensör Bilgileri</h5>
+            </div>
+            <div class="card-body">
+                <p><strong>Sensör Kodu:</strong> <span th:text="${sensor.sensorKodu}">SNS001</span></p>
+                <p><strong>Tarla:</strong> <span th:text="${sensor.tarlaAdi}">Tarla A</span></p>
+                <p><strong>Sensör Tipi:</strong> <span th:text="${sensor.sensorTipi}">Sıcaklık</span> (<span th:text="${sensor.olcumBirimi}">°C</span>)</p>
+                <a th:href="@{/admin/sensorler/okuma/ekle(sensorId=${sensor.sensorID})}" class="btn btn-sm btn-success mt-2">
+                    <i class="fas fa-plus"></i> Bu Sensöre Okuma Ekle
+                </a>
+            </div>
+        </div>
+
+        <a th:href="@{/admin/sensorler}" class="btn btn-secondary mb-3">
+            <i class="fas fa-arrow-left"></i> Sensör Listesine Dön
+        </a>
+
+        <h4 class="mb-3">Okuma Kayıtları</h4>
+        <div class="table-responsive">
+            <table class="table table-striped table-bordered table-hover">
+                <thead class="table-dark">
+                <tr>
+                    <th>Okuma ID</th>
+                    <th>Okuma Zamanı</th>
+                    <th>Değer</th>
+                    <th>Birim</th>
+                    <th>Giren Kullanıcı</th>
+                    <th>Kayıt Tarihi</th>
+                </tr>
+                </thead>
+                <tbody>
+                <tr th:each="okuma : ${okumalar}">
+                    <td th:text="${okuma.okumaID}">101</td>
+                    <td th:text="${okuma.okumaZamani != null ? #temporals.format(okuma.okumaZamani, 'dd.MM.yyyy HH:mm:ss') : '-'}">16.06.2024 10:15:30</td>
+                    <!-- Örnek Değer Bazlı Renklendirme (Sıcaklık için) -->
+                    <td th:text="${okuma.deger}"
+                        th:classappend="${okuma.sensorTipi != null and #strings.containsIgnoreCase(okuma.sensorTipi, 'Sıcaklık')} ?
+                                       (${#strings.replace(okuma.deger,',','.') gt 35 ? 'okuma-deger-kritik' : (#strings.replace(okuma.deger,',','.') gt 30 ? 'okuma-deger-uyari' : 'okuma-deger-normal')}) : ''">
+                        25.5
+                    </td>
+                    <td th:text="${okuma.okumaBirimi ?: '-'}">°C</td>
+                    <td th:text="${okuma.girenKullanici ?: 'Sistem'}">Ahmet Y.</td>
+                    <td th:text="${okuma.kayitTarihi != null ? #temporals.format(okuma.kayitTarihi, 'dd.MM.yyyy HH:mm') : '-'}">16.06.2024 10:16:00</td>
+                </tr>
+                <tr th:if="${okumalar == null || #lists.isEmpty(okumalar)}">
+                    <td colspan="6" class="text-center">Bu sensöre ait kayıtlı okuma bulunamadı.</td>
+                </tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+</body>
+</html>

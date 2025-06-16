@@ -2,6 +2,8 @@ package com.example.tarimtakipbackend.controller;
 
 import com.example.tarimtakipbackend.dto.SensorDetayDto;
 import com.example.tarimtakipbackend.dto.SensorFormDto;
+import com.example.tarimtakipbackend.dto.SensorOkumaDetayDto;
+import com.example.tarimtakipbackend.dto.SensorOkumaFormDto;
 import com.example.tarimtakipbackend.entity.Sensor;
 import com.example.tarimtakipbackend.repository.SensorTipiRepository;
 import com.example.tarimtakipbackend.repository.TarlaRepository;
@@ -11,17 +13,17 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.validation.BindingResult;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.ModelAttribute;
-import org.springframework.web.bind.annotation.PathVariable;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.*;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 
 import java.time.LocalDate;
+import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
 import java.time.format.DateTimeParseException;
 import java.util.Collections;
 import java.util.List;
@@ -29,10 +31,10 @@ import java.util.Optional;
 
 @Controller
 @RequestMapping("/admin/sensorler")
-@PreAuthorize("hasRole('ADMIN')")
 public class SensorController {
 
     private static final Logger logger = LoggerFactory.getLogger(SensorController.class);
+    private static final DateTimeFormatter ISO_DATETIME_FORMATTER = DateTimeFormatter.ISO_LOCAL_DATE_TIME;
 
     @Autowired
     private SensorServis sensorServis;
@@ -43,11 +45,23 @@ public class SensorController {
     @Autowired
     private SensorTipiRepository sensorTipiRepository;
 
+    private boolean isAdmin(Authentication authentication) {
+        if (authentication == null) return false;
+        return authentication.getAuthorities().stream()
+                .anyMatch(a -> a.getAuthority().equals("ROLE_ADMIN"));
+    }
+
     @GetMapping
-    public String listSensorler(Model model) {
+    @PreAuthorize("hasAnyRole('ADMIN', 'CALISAN')")
+    public String listSensorler(Model model, Authentication authentication) {
         logger.info("/admin/sensorler GET isteği - Sensörler listeleniyor.");
-        model.addAttribute("pageTitle", "Admin - Sensör Yönetimi");
-        model.addAttribute("activePage", "sensorler");
+        model.addAttribute("pageTitle", "Sensör Listesi");
+
+        if (isAdmin(authentication)) {
+            model.addAttribute("activePage", "sensorYonetimi");
+        } else {
+            model.addAttribute("activePage", "sensorler");
+        }
 
         try {
             List<SensorDetayDto> sensorler = sensorServis.getAllSensorlerSP();
@@ -62,10 +76,11 @@ public class SensorController {
     }
 
     @GetMapping("/ekle")
+    @PreAuthorize("hasRole('ADMIN')")
     public String showSensorEkleForm(Model model) {
         logger.info("/admin/sensorler/ekle GET isteği - Yeni sensör formu gösteriliyor.");
         model.addAttribute("pageTitle", "Admin - Yeni Sensör Ekle");
-        model.addAttribute("activePage", "sensorler");
+        model.addAttribute("activePage", "sensorYonetimi");
 
         if (!model.containsAttribute("sensorForm")) {
             SensorFormDto formDto = new SensorFormDto();
@@ -79,10 +94,11 @@ public class SensorController {
     }
 
     @GetMapping("/duzenle/{id}")
+    @PreAuthorize("hasRole('ADMIN')")
     public String showSensorDuzenleForm(@PathVariable("id") Integer id, Model model, RedirectAttributes redirectAttributes) {
         logger.info("/admin/sensorler/duzenle/{} GET isteği - Sensör düzenleme formu gösteriliyor.", id);
         model.addAttribute("pageTitle", "Admin - Sensörü Düzenle");
-        model.addAttribute("activePage", "sensorler");
+        model.addAttribute("activePage", "sensorYonetimi");
 
         if (!model.containsAttribute("sensorForm")) {
             Optional<Sensor> sensorOpt = sensorServis.findSensorEntityById(id);
@@ -110,11 +126,11 @@ public class SensorController {
     }
 
     @PostMapping("/kaydet")
+    @PreAuthorize("hasRole('ADMIN')")
     public String saveSensor(@ModelAttribute("sensorForm") SensorFormDto sensorFormDto,
                              BindingResult result,
                              RedirectAttributes redirectAttributes,
                              Model model) {
-
         logger.info("/admin/sensorler/kaydet POST isteği. Sensör ID: {}", sensorFormDto.getSensorID());
 
         if (sensorFormDto.getSensorKodu() == null || sensorFormDto.getSensorKodu().trim().isEmpty()) {
@@ -139,9 +155,9 @@ public class SensorController {
         }
 
         if (result.hasErrors()) {
-            logger.warn("Formda validasyon hataları var: {}", result.getAllErrors());
+            logger.warn("Sensör formunda validasyon hataları var: {}", result.getAllErrors());
             model.addAttribute("pageTitle", (sensorFormDto.getSensorID() == null ? "Admin - Yeni Sensör Ekle" : "Admin - Sensörü Düzenle"));
-            model.addAttribute("activePage", "sensorler");
+            model.addAttribute("activePage", "sensorYonetimi");
             model.addAttribute("tarlalar", tarlaRepository.findAll());
             model.addAttribute("sensorTipleri", sensorTipiRepository.findAll());
             return "admin/sensor-form";
@@ -153,9 +169,9 @@ public class SensorController {
                 Sensor kaydedilenSensor = sensorServis.saveSensorSP(sensorFormDto);
                 successMsg = "Sensör başarıyla eklendi. ID: " + kaydedilenSensor.getSensorID();
             } else {
-                // TODO: sensorServis.updateSensorSP(sensorFormDto) implemente edilecek.
-                logger.info("Sensör güncelleme (ID: {}) işlemi SensorServis.updateSensorSP çağrılacak (henüz implemente edilmedi).", sensorFormDto.getSensorID());
-                successMsg = "Sensör başarıyla güncellendi (Servis implementasyonu bekleniyor). ID: " + sensorFormDto.getSensorID();
+                logger.warn("Sensör güncelleme (ID: {}) için updateSensorSP henüz implemente edilmedi veya çağrılmıyor.", sensorFormDto.getSensorID());
+                redirectAttributes.addFlashAttribute("warningMessage", "Sensör güncelleme fonksiyonu henüz tam olarak aktif değil.");
+                successMsg = "Sensör güncelleme işlemi için backend'de düzenleme gerekiyor. ID: " + sensorFormDto.getSensorID();
             }
             redirectAttributes.addFlashAttribute("successMessage", successMsg);
             return "redirect:/admin/sensorler";
@@ -170,12 +186,13 @@ public class SensorController {
             logger.error("Sensör kaydetme/güncelleme sırasında beklenmedik hata: ", e);
             redirectAttributes.addFlashAttribute("errorMessage", "İşlem sırasında beklenmedik bir hata oluştu.");
             redirectAttributes.addFlashAttribute("sensorForm", sensorFormDto);
-            String redirectUrl = (sensorFormDto.getSensorID() != null) ? "/admin/sensorler/duzenle/" + sensorFormDto.getSensorID() + "?error" : "/admin/sensorler/ekle?error";
+            String redirectUrl = (sensorFormDto.getSensorID() != null) ? "/admin/sensorler/duzenle/" + sensorFormDto.getSensorID() + "?error_unexpected" : "/admin/sensorler/ekle?error_unexpected";
             return "redirect:" + redirectUrl;
         }
     }
 
     @GetMapping("/sil/{id}")
+    @PreAuthorize("hasRole('ADMIN')")
     public String deleteSensor(@PathVariable("id") Integer id, RedirectAttributes redirectAttributes) {
         logger.info("/admin/sensorler/sil/{} GET isteği.", id);
         try {
@@ -183,7 +200,6 @@ public class SensorController {
             if (silindi) {
                 redirectAttributes.addFlashAttribute("successMessage", "Sensör başarıyla silindi. ID: " + id);
             } else {
-                 // Bu bloğa normalde girilmemesi lazım, servis exception fırlatır
                 redirectAttributes.addFlashAttribute("errorMessage", "Sensör silinemedi (Beklenmedik durum).");
             }
         } catch (RuntimeException e) {
@@ -191,5 +207,111 @@ public class SensorController {
             redirectAttributes.addFlashAttribute("errorMessage", "Silme işlemi sırasında bir hata oluştu: " + e.getMessage());
         }
         return "redirect:/admin/sensorler";
+    }
+
+    @GetMapping("/{sensorId}/okumalar")
+    @PreAuthorize("hasAnyRole('ADMIN', 'CALISAN')")
+    public String listSensorOkumalari(@PathVariable("sensorId") Integer sensorId, Model model, RedirectAttributes redirectAttributes, Authentication authentication) {
+        logger.info("/admin/sensorler/{}/okumalar GET isteği.", sensorId);
+        Optional<SensorDetayDto> sensorDetayOpt = sensorServis.getSensorDetayByIdSP(sensorId);
+
+        if (sensorDetayOpt.isEmpty()) {
+            redirectAttributes.addFlashAttribute("errorMessage", "Sensör bulunamadı ID: " + sensorId);
+            return "redirect:/admin/sensorler";
+        }
+
+        model.addAttribute("sensor", sensorDetayOpt.get());
+        model.addAttribute("pageTitle", sensorDetayOpt.get().getSensorKodu() + " - Sensör Okumaları");
+
+        if (isAdmin(authentication)) {
+            model.addAttribute("activePage", "sensorYonetimi");
+        } else {
+            model.addAttribute("activePage", "sensorler");
+        }
+
+        try {
+            List<SensorOkumaDetayDto> okumalar = sensorServis.getOkumalarBySensorIdSP(sensorId, 200);
+            model.addAttribute("okumalar", okumalar);
+        } catch (Exception e) {
+            logger.error("Sensör okumaları listelenirken hata oluştu (SensorID: {}): {}",sensorId, e.getMessage(), e);
+            model.addAttribute("errorMessageOkumalar", "Okumalar listelenirken bir hata oluştu.");
+            model.addAttribute("okumalar", Collections.emptyList());
+        }
+        return "admin/sensor-okumalari-liste";
+    }
+
+    @GetMapping("/okuma/ekle")
+    @PreAuthorize("hasAnyRole('ADMIN', 'CALISAN')")
+    public String showSensorOkumaEkleForm(@RequestParam(name = "sensorId", required = false) Integer sensorId, Model model) {
+        logger.info("/admin/sensorler/okuma/ekle GET isteği. Önceden seçili Sensor ID: {}", sensorId);
+        model.addAttribute("pageTitle", "Yeni Sensör Okuması Ekle");
+        model.addAttribute("activePage", "sensorOkumaEkle");
+
+        SensorOkumaFormDto formDto = new SensorOkumaFormDto();
+        if (sensorId != null) {
+            formDto.setSensorId(sensorId);
+            sensorServis.getSensorDetayByIdSP(sensorId).ifPresent(s -> formDto.setBirim(s.getOlcumBirimi()));
+        }
+        formDto.setOkumaZamani(LocalDateTime.now().format(ISO_DATETIME_FORMATTER));
+
+        model.addAttribute("sensorOkumaForm", formDto);
+        model.addAttribute("sensorlerListesi", sensorServis.getAllSensorlerSP());
+
+        return "admin/sensor-okuma-form";
+    }
+
+    @PostMapping("/okuma/kaydet")
+    @PreAuthorize("hasAnyRole('ADMIN', 'CALISAN')")
+    public String saveSensorOkuma(@ModelAttribute("sensorOkumaForm") SensorOkumaFormDto sensorOkumaFormDto,
+                                  BindingResult result,
+                                  RedirectAttributes redirectAttributes,
+                                  Model model) {
+        logger.info("/admin/sensorler/okuma/kaydet POST isteği. SensorID: {}", sensorOkumaFormDto.getSensorId());
+
+        if (sensorOkumaFormDto.getSensorId() == null) {
+            result.rejectValue("sensorId", "NotNull", "Sensör seçimi zorunludur.");
+        }
+        if (sensorOkumaFormDto.getOkumaZamani() == null || sensorOkumaFormDto.getOkumaZamani().trim().isEmpty()) {
+            result.rejectValue("okumaZamani", "NotEmpty", "Okuma zamanı boş olamaz.");
+        } else {
+            try {
+                LocalDateTime.parse(sensorOkumaFormDto.getOkumaZamani(), ISO_DATETIME_FORMATTER);
+            } catch (DateTimeParseException e) {
+                result.rejectValue("okumaZamani", "Pattern", "Okuma zamanı formatı geçersiz (yyyy-MM-ddTHH:mm).");
+            }
+        }
+        if (sensorOkumaFormDto.getDeger() == null || sensorOkumaFormDto.getDeger().trim().isEmpty()) {
+            result.rejectValue("deger", "NotEmpty", "Okuma değeri boş olamaz.");
+        }
+
+        if (result.hasErrors()) {
+            logger.warn("Sensör okuma formunda validasyon hataları var: {}", result.getAllErrors());
+            model.addAttribute("pageTitle", "Yeni Sensör Okuması Ekle");
+            model.addAttribute("activePage", "sensorOkumaEkle");
+            model.addAttribute("sensorlerListesi", sensorServis.getAllSensorlerSP());
+            return "admin/sensor-okuma-form";
+        }
+
+        try {
+            sensorServis.saveSensorOkumaSP(sensorOkumaFormDto);
+            redirectAttributes.addFlashAttribute("successMessage", "Sensör okuması başarıyla kaydedildi.");
+            if (sensorOkumaFormDto.getSensorId() != null) {
+                return "redirect:/admin/sensorler/" + sensorOkumaFormDto.getSensorId() + "/okumalar";
+            }
+            return "redirect:/admin/sensorler";
+
+        } catch (IllegalArgumentException e) {
+            logger.error("Sensör okuması kaydı sırasında hata: {}", e.getMessage());
+            redirectAttributes.addFlashAttribute("errorMessage", e.getMessage());
+            redirectAttributes.addFlashAttribute("sensorOkumaForm", sensorOkumaFormDto);
+            String redirectSuffix = (sensorOkumaFormDto.getSensorId() != null) ? "?sensorId=" + sensorOkumaFormDto.getSensorId() + "&error" : "?error";
+            return "redirect:/admin/sensorler/okuma/ekle" + redirectSuffix;
+        } catch (Exception e) {
+            logger.error("Sensör okuması kaydı sırasında beklenmedik hata: ", e);
+            redirectAttributes.addFlashAttribute("errorMessage", "Beklenmedik bir hata oluştu: " + e.getMessage());
+            redirectAttributes.addFlashAttribute("sensorOkumaForm", sensorOkumaFormDto);
+            String redirectSuffix = (sensorOkumaFormDto.getSensorId() != null) ? "?sensorId=" + sensorOkumaFormDto.getSensorId() + "&error_unexpected" : "?error_unexpected";
+            return "redirect:/admin/sensorler/okuma/ekle" + redirectSuffix;
+        }
     }
 }
